@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://code4fukui.github.io/three.js/build/three.module.js",
+    "three/addons/": "https://code4fukui.github.io/three.js/examples/jsm/"
+  }
+}
+</script>
+<style>
+body {
+    margin: 0;
+}
+</style>
+<body>
+<script type="module">
+import * as THREE from "three";
+
+// シーン、カメラ、レンダラーのセットアップ
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+camera.position.set(0, 1, 5);
+
+// RenderTargetの作成
+const renderTarget = new THREE.WebGLRenderTarget(512, 512);
+
+// シーン内に表示するオブジェクト
+const boxGeometry = new THREE.BoxGeometry();
+const boxMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const box = new THREE.Mesh(boxGeometry, boxMaterial);
+box.position.set(-1.5, 0, 0);
+scene.add(box);
+
+// RenderTargetのテクスチャを適用する平面
+const planeGeometry = new THREE.PlaneGeometry(2, 2);
+const planeMaterial = new THREE.MeshBasicMaterial({
+    map: renderTarget.texture,
+    side: THREE.DoubleSide,
+});
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+plane.position.set(1.5, 0, 0);
+scene.add(plane);
+
+// RenderTarget用のシーンとカメラを用意
+const rtScene = new THREE.Scene();
+const rtCamera = new THREE.PerspectiveCamera(70, 1, 0.1, 1000);
+rtCamera.position.z = 2;
+rtScene.add(rtCamera);
+
+// RenderTargetシーンのオブジェクト
+const rtBox = new THREE.Mesh(boxGeometry, new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+}));
+rtScene.add(rtBox);
+
+// アニメーションループ
+function animate() {
+    // Boxの回転
+    box.rotation.x += 0.01;
+    box.rotation.y += 0.01;
+    rtBox.rotation.x += 0.01;
+    rtBox.rotation.y += 0.01;
+
+    // RenderTargetにレンダリング
+    renderer.setRenderTarget(renderTarget);
+    renderer.setClearColor(0xffffff);
+    renderer.render(rtScene, rtCamera);
+
+    const t = Math.cos(performance.now() / 1000);
+    //camera.position.y = 0 + 2 * Math.cos(performance.now() / 1000);
+    plane.rotation.y = performance.now() / 1000;
+
+    // 通常のシーンにレンダリング
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(0x000000);
+    renderer.render(scene, camera);
+}
+
+renderer.setAnimationLoop(animate);
+</script>
+</body>
+</html>
